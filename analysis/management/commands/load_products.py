@@ -5,4 +5,7 @@ from analysis.logic import UploadCleanDataSet
 class Commands(BaseCommand):
 
     def handle(self, *args: Any, **options: Any) -> str | None:
-        UploadCleanDataSet().processDataSetToDatabase(path="")
+        try:
+            UploadCleanDataSet().processDataSetToDatabase(path="")
+        except Exception as e:
+            raise Exception(e)
