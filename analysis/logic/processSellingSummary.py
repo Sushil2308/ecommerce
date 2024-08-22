@@ -1,5 +1,6 @@
 from analysis.models import Product
 import pandas as pd
+import os
 
 class SummaryReportProcessor:
 
@@ -8,7 +9,7 @@ class SummaryReportProcessor:
         try:
             # Load all products from the database and convert them to a pandas DataFrame.
             products = Product.objects.all().values()
-            return pd.DataFrame(products)
+            return pd.DataFrame(products, columns=["product_name","category","price","quantity_sold","rating","review_count"])
         except Exception as e:
             # Handle any exception that occurs during data retrieval or DataFrame creation.
             raise Exception(f"Error loading data into DataFrame: {e}")
@@ -29,7 +30,8 @@ class SummaryReportProcessor:
             ).reset_index()
 
             # Save the summary report to a CSV file.
-            summary.to_csv('Summary_Report.csv', index=False)
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            summary.to_csv(base_dir + '/SummaryOutput/Summary_Report.csv', index=False)
             return {'message': 'Summary report generated successfully'}
         except KeyError as e:
             # Handle missing columns during the aggregation process.

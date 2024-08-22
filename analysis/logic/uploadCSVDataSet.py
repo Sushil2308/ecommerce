@@ -8,17 +8,17 @@ class UploadCleanDataSet:
     def __init__(self) -> None:
         # Initialize the class by getting all fields of the Product model.
         try:
-            self.columns = Product._meta.get_fields()
+            self.columns = set(["product_name","category","price","quantity_sold","rating","review_count"])
         except AttributeError as e:
             raise Exception("Error retrieving model fields: " + str(e))
 
     @staticmethod
     def CleanDataSetAsPerGivenRules(df: pd.DataFrame) -> pd.DataFrame:
         try:
-            # Fill missing 'price' values with the median price.
-            df['price'].fillna(df['price'].median(), inplace=True)
+           # Fill missing 'price' values with the median price.
+            df['price'] = df['price'].fillna(df['price'].median())
             # Fill missing 'quantity_sold' values with the median quantity.
-            df['quantity_sold'].fillna(df['quantity_sold'].median(), inplace=True)
+            df['quantity_sold'] = df['quantity_sold'].fillna(df['quantity_sold'].median())
             # Fill missing 'rating' values with the mean rating within each category.
             df['rating'] = df.groupby('category')['rating'].transform(lambda x: x.fillna(x.mean()))
         except KeyError as e:
@@ -53,7 +53,7 @@ class UploadCleanDataSet:
             for product in products:
                 UpdatedSet.add(product.id)
                 UpdateDetails = df_dict[product.id]
-                UpdateAbleFields = set(self.columns).intersection(set(UpdateDetails.keys()))
+                UpdateAbleFields = self.columns.intersection(set(UpdateDetails.keys()))
 
                 # Update only the fields that exist in both the Product model and the CSV.
                 for column in UpdateAbleFields:
@@ -65,13 +65,15 @@ class UploadCleanDataSet:
             BULK_ADD = []  
             # Prepare a list for bulk creation of new products.
             for newProduct in df_dict.keys() - UpdatedSet:
+                prod = df_dict[newProduct]
+                prod.pop("product_id")
                 BULK_ADD.append(Product(**df_dict[newProduct]))
 
             with transaction.atomic():
                 # Perform bulk update for existing products.
                 if products:
                     try:
-                        Product.objects.bulk_update(products, fields=[f.name for f in self.columns if f.name in UpdateAbleFields], batch_size=20)
+                        Product.objects.bulk_update(products, fields=self.columns, batch_size=20)
                     except DatabaseError as e:
                         raise Exception("Error during bulk update: " + str(e))
                 # Perform bulk create for new products.

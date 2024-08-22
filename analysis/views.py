@@ -10,7 +10,7 @@ class SummaryReportView(APIView, SummaryReportProcessor):
     def get(self, request):
         try:
             return Response(
-                self.processSumamry()
+                self.processSummary()
             )
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST)
